@@ -1,130 +1,62 @@
 ---
-date: 2019-05-16 23:48:05
+date: 2022-02-05 23:48:05
 layout: post
-title: Welcome to the desert of the real
-subtitle: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit.'
+title: What is TPU
+subtitle: Tensor Processing Unit - Skilled workers on the construction sites of AI models
 description: >-
-  Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-  tempor incididunt ut labore et dolore magna aliqua.
+  In the rapidly evolving field of artificial intelligence (AI), specialized hardware plays a crucial role in enhancing the performance and efficiency of machine learning tasks. One such innovation is the Tensor Processing Unit (TPU), an application-specific integrated circuit (ASIC) developed by Google to accelerate AI computations.
 image: >-
-  https://res.cloudinary.com/dm7h7e8xj/image/upload/v1559821647/theme6_qeeojf.jpg
+  https://res.cloudinary.com/dptj6j9y9/image/upload/v1738864731/Tensor_Processing_Unit_3.0_smotnv.jpg
 optimized_image: >-
-  https://res.cloudinary.com/dm7h7e8xj/image/upload/c_scale,w_380/v1559821647/theme6_qeeojf.jpg
+  https://res.cloudinary.com/dptj6j9y9/image/upload/v1738864731/Tensor_Processing_Unit_3.0_smotnv.jpg
 category: blog
 tags:
   - welcome
   - blog
-author: mranderson
+author: linhvu2695
 paginate: true
 ---
-Cas sociis natoque penatibus et magnis <a href="#">dis parturient montes</a>, nascetur ridiculus mus. *Aenean eu leo quam.* Pellentesque ornare sem lacinia quam venenatis vestibulum. Sed posuere consectetur est at lobortis. Cras mattis consectetur purus sit amet fermentum.
+The TPU was created by the engineers in Google on 2015, to do one thing that is in the core of all AI algorithms: **matrix multiplications**. Since the adaptation of neural networks, vectors has been the data atoms of machine learning algorithms. Therefore it is crucial to have a machine that is specialized in handling vectors, or their aggregated form - matrixes. CPUs can calculate complex operations, GPUs can do simple ones in parallel, and TPU is dedicated itself for matrix multiplication.
 
-> Curabitur blandit tempus porttitor. Nullam quis risus eget urna mollis ornare vel eu leo. Nullam id dolor id nibh ultricies vehicula ut id elit.
+<img src="https://res.cloudinary.com/dptj6j9y9/image/upload/v1738947741/85e08711-1e69-49c8-bc17-854a18a430b7_3200x1695-scaled_ejdvms.jpg">
+<p style="text-align: center; font-style: italic; font-size: 1.1rem;">Figure 1: Google Data Center's TPUv5e rack.</p>
 
-Etiam porta **sem malesuada magna** mollis euismod. Cras mattis consectetur purus sit amet fermentum. Aenean lacinia bibendum nulla sed consectetur.
+# Components
+Here's a diagram of the TPU:
+<img src="https://res.cloudinary.com/dptj6j9y9/image/upload/v1738865242/tpu-chip_yj1gaf.png" />
+<p style="text-align: center; font-style: italic; font-size: 1.1rem;">Figure 2: The basic components of a TPU chip. The TensorCore is the gray left-hand box, containing the matrix-multiply unit (MXU), vector unit (VPU), and vector memory (VMEM).</p>
 
-## Inline HTML elements
+* The TPU **scalar core** processes all of the instructions and executes all of the transfers from HBM into vector memory (VMEM). The scalar core is also responsible for fetching instructions for the VPU, MXU and XLU components of the chip. 
+* **MXU** (Matrix Multiply Unit) is the core of the TensorCore. For most TPU generations, it performs one `bfloat16[8,128] @ bf16[128,128] -> f32[8,128]` matrix multiply1 every 8 cycles using a systolic array. This is about 50 trillions bf16 FLOPs/s per MXU at 1.5GHz on TPU v5e. Most TensorCores have 2 or 4 MXUs, so e.g. the total bf16 FLOPs/s for TPU v5e is 200 trillions.
+* The **VPU** (Vector Processing Unit) performs general mathematical operations like ReLU activations or pointwise addition or multiplication between vectors. Reductions (sums) are also performed here. 
+* **VMEM** (Vector Memory) is an on-chip scratchpad located in the TensorCore, close to the compute units. It is much smaller than HBM (for example, 128 MiB on TPU v5e) but has a much higher bandwidth to the MXU. VMEM operates somewhat like an L1/L2 cache on CPUs but is much larger and programmer-controlled. Data in HBM needs to be copied into VMEM before the TensorCore can do any computation with it.
+* **HBM** (High Bandwidth Memory) is a big chunk of fast memory that stores tensors for use by the TensorCore. HBM usually has capacity on the order of tens of gigabytes 
 
-HTML defines a long list of available inline tags, a complete list of which can be found on the [Mozilla Developer Network](https://developer.mozilla.org/en-US/docs/Web/HTML/Element).
+TPUs are very simple. They load weights from HBM into VMEM, then from VMEM into a systolic array in MXU which can perform around 200 trillion multiply-adds per second. The HBM ↔ VMEM and VMEM ↔ systolic array bandwidths set fundamental limits on what computations TPUs can do efficiently. Data is also load in and out in pipelined manner to minimize latency.
 
-* **To bold text**, use `<strong>`.
-* *To italicize text*, use `<em>`.
-* Abbreviations, like <abbr title="HyperText Markup Langage">HTML</abbr> should use `<abbr>`, with an optional `title` attribute for the full phrase.
-* Citations, like <cite>&mdash; Thomas A. Anderson</cite>, should use `<cite>`.
-* <del>Deleted</del> text should use `<del>` and <ins>inserted</ins> text should use `<ins>`.
-* Superscript <sup>text</sup> uses `<sup>` and subscript <sub>text</sub> uses `<sub>`.
+Here’s an example of how you might perform an elementwise product from HBM:
+<img src="https://res.cloudinary.com/dptj6j9y9/image/upload/v1738949221/pointwise-product_xken4v.gif">
+<p style="text-align: center; font-style: italic; font-size: 1.1rem;">Figure3 : an animation showing a pointwise product performed on TPU, with bytes loaded from HBM. Note how bytes are streamed out of memory in chunks and partial results are pipelined back without waiting for the full array to be materialized.</p>
 
-Most of these elements are styled by browsers with few modifications on our part.
+A TPU chip typically (but not always) consists of two TPU cores which share memory and can be thought of as one large accelerator with twice the FLOPs. This has been true since TPU v4 (known as “megacore”). On older TPU chips they have separate memory and are regarded as two separate accelerators (TPU v3 and older). Inference-optimized chips like the TPU v5e only have one TPU core per chip.
+<img src="https://jax-ml.github.io/scaling-book/assets/img/cores.png">
 
-# Heading 1
+# Networking
+TPU chips are connected to each other through the ICI network in a Pod. The way they are connected is topologically designed to reduce the average distance that data have to travel between chips. In older generations, each chip connects the 4 nearest neighbors (with edge links to form a 2D torus). TPU v4 and TPU v5p are connected to the nearest 6 neighbors (forming a 3D torus). Note these connections do not go through their hosts, they are direct links between chips. The toroidal structure reduces the maximum distance between any two nodes from N to N/2, making communication much faster.
+<img src="https://jax-ml.github.io/scaling-book/assets/img/ici-wraparound.png">
+<img src="https://jax-ml.github.io/scaling-book/assets/img/tpu-rack.png">
 
-## Heading 2
+# Appendix
 
-### Heading 3
+## TPUs v GPUs
+Compared to TPUs, GPUs have a simpler communication model and a more complicated programming model.
+* GPUs are conceptually similar to TPUs: they also function as an accelerator attached to a CPU.
+* Differ in that computations are performed over a higher number of ‘streaming multiprocessors’ (equivalent to the TensorCore) connected to DRAM (equivalent to HBM). Each streaming multiprocessor (SM) has a small L1 cache used to speed data access and for register spilling. A section of the memory used for the L1 cache can also be declared as shared memory allowing access from any thread in the thread-block, and is used for user-defined caches, parallel reductions and synchronization, etc. Lastly, there is an additional L2 cache that is shared by all SMs.
 
-#### Heading 4
+## Systolic array
+At the core of the TPU MXU is a 128x128 systolic array (256x256 on TPU v6e). Weights (W, the 128x128 input) are passed down from above (called the RHS) while inputs (X, the 8x128 input) are passed in from the left (called the LHS). 
 
-Vivamus sagittis lacus vel augue rutrum faucibus dolor auctor. Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget lacinia odio sem nec elit. Morbi leo risus, porta ac consectetur ac, vestibulum at eros.
-
---page-break--
-
-## Code
-
-Cum sociis natoque penatibus et magnis dis `code element` montes, nascetur ridiculus mus.
-
-```js
-// Example can be run directly in your JavaScript console
-
-// Create a function that takes two arguments and returns the sum of those arguments
-var adder = new Function("a", "b", "return a + b");
-
-// Call the function
-adder(2, 6);
-// > 8
-```
-
-Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa.
-
-## Lists
-
-Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Aenean lacinia bibendum nulla sed consectetur. Etiam porta sem malesuada magna mollis euismod. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus.
-
-* Praesent commodo cursus magna, vel scelerisque nisl consectetur et.
-* Donec id elit non mi porta gravida at eget metus.
-* Nulla vitae elit libero, a pharetra augue.
-
-Donec ullamcorper nulla non metus auctor fringilla. Nulla vitae elit libero, a pharetra augue.
-
-1. Vestibulum id ligula porta felis euismod semper.
-2. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
-3. Maecenas sed diam eget risus varius blandit sit amet non magna.
-
-Cras mattis consectetur purus sit amet fermentum. Sed posuere consectetur est at lobortis.
-
-Integer posuere erat a ante venenatis dapibus posuere velit aliquet. Morbi leo risus, porta ac consectetur ac, vestibulum at eros. Nullam quis risus eget urna mollis ornare vel eu leo.
-
-## Images
-
-Quisque consequat sapien eget quam rhoncus, sit amet laoreet diam tempus. Aliquam aliquam metus erat, a pulvinar turpis suscipit at.
-
-![placeholder](https://placehold.it/800x400 "Large example image") ![placeholder](https://placehold.it/400x200 "Medium example image") ![placeholder](https://placehold.it/200x200 "Small example image")
-
-## Tables
-
-Aenean lacinia bibendum nulla sed consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Upvotes</th>
-      <th>Downvotes</th>
-    </tr>
-  </thead>
-  <tfoot>
-    <tr>
-      <td>Totals</td>
-      <td>21</td>
-      <td>23</td>
-    </tr>
-  </tfoot>
-  <tbody>
-    <tr>
-      <td>Alice</td>
-      <td>10</td>
-      <td>11</td>
-    </tr>
-    <tr>
-      <td>Bob</td>
-      <td>4</td>
-      <td>3</td>
-    </tr>
-    <tr>
-      <td>Charlie</td>
-      <td>7</td>
-      <td>9</td>
-    </tr>
-  </tbody>
-</table>
-
-Nullam id dolor id nibh ultricies vehicula ut id elit. Sed posuere consectetur est at lobortis. Nullam quis risus eget urna mollis ornare vel eu leo.
+Here is a simplified animation of multiplying a set of weights (blue) with a set of activations (green). You’ll notice that the weights (RHS) are partially loaded first, diagonally, and then the activations are fed in, also diagonally. In each frame above, we multiply all the overlapped green and blue units, sum the result with any residual passed in from above, and then pass the result in turn down one unit.
+<img src="https://res.cloudinary.com/dptj6j9y9/image/upload/v1738951264/systolic-array_tsrsvg.gif">
+Here’s a more general version of this animation showing the output being streamed out of computation:
+<img src="https://res.cloudinary.com/dptj6j9y9/image/upload/v1738951264/systolic-array2_qcajly.gif">
