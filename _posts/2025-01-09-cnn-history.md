@@ -134,4 +134,7 @@ Where CNNs introduce several inductive biases about images, Transformers do the 
 # Final Thoughts
 The history of CNNs teaches us so much about Deep Learning, Inductive Bias, and the nature of computation itself. It’ll be interesting to see what wins out in the end — the inductive biases of ConvNets or the Generality of Transformers. Whatever happens, it is a blessings to be able to witness all the amazing evolution going on in the area of Computer Vision.
 
+# Resources
+* Check out this amazing <a href="https://poloclub.github.io/cnn-explainer/">CNN Explainer</a> from poloclub!
+
 
