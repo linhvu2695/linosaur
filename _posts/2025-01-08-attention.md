@@ -9,6 +9,8 @@ optimized_image: https://www.chatgptguide.ai/wp-content/uploads/2024/08/image-18
 category: Model
 tags:
   - model
+  - nlp
+  - ai
 author: linhvu2695
 paginate: true
 ---

@@ -10,6 +10,8 @@ category: Model
 tags:
   - model
   - computer vision
+  - ai
+  - cnn
 author: linhvu2695
 paginate: true
 ---
